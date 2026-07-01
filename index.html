@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Інтерактивний Терапевтичний Маршрут</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2A4D3B;
+            --secondary: #8BA88E;
+            --accent: #D4AF37;
+            --bg-color: #F4F7F5;
+            --text-dark: #2F3E35;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(to right, #1a3326, var(--primary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 10;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            margin: 10px 0 0;
+            font-size: 1.1rem;
+            color: #E8F0EA;
+            font-weight: 300;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 40px auto;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .map-image {
+            width: 100%;
+            display: block;
+            height: auto;
+        }
+
+        .pin {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            cursor: pointer;
+            box-shadow: -2px 2px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+
+        .pin span {
+            transform: rotate(45deg);
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .pin:hover {
+            transform: rotate(-45deg) scale(1.2);
+            background: #ffc107;
+            animation: none;
+            z-index: 5;
+        }
+
+        /* Marker Positions (Approximate based on typical top-down views) */
+        #pin1 { top: 35%; left: 25%; }
+        #pin2 { top: 55%; left: 45%; }
+        #pin3 { top: 20%; left: 65%; }
+        #pin4 { top: 70%; left: 75%; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(212, 175, 55, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            overflow-y: auto;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 900px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            position: relative;
+            transform: translateY(30px);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: auto;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+            transition: background 0.3s ease;
+            border: none;
+        }
+
+        .close-btn:hover {
+            background: var(--primary);
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+
+        @media (min-width: 768px) {
+            .modal-body {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            min-height: 300px;
+        }
+
+        .modal-text {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .modal-text h2 {
+            color: var(--primary);
+            margin-top: 0;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 10px;
+        }
+
+        .modal-text h3 {
+            color: var(--secondary);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-text p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .plant-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .plant-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.95rem;
+        }
+
+        .plant-list li strong {
+            color: var(--primary);
+        }
+
+        .plant-list li:last-child {
+            border-bottom: none;
+        }
+
+        .instruction {
+            text-align: center;
+            color: var(--text-dark);
+            font-weight: 600;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Інтерактивний Терапевтичний Маршрут</h1>
+        <p>Натисніть на значки на генеральному плані, щоб переглянути деталі кожної ділянки.</p>
+    </header>
+
+    <div class="instruction">👇 Натисніть на маркери на карті 👇</div>
+
+    <div class="map-container">
+        <!-- Main Top View Image -->
+        <img src="route_top_view_1782913298766.png" class="map-image" alt="Генеральний план">
+        
+        <!-- Interactive Pins -->
+        <div class="pin" id="pin1" onclick="openModal('modal1')" title="Перспективний вид 1"><span>1</span></div>
+        <div class="pin" id="pin2" onclick="openModal('modal2')" title="Перспективний вид 2"><span>2</span></div>
+        <div class="pin" id="pin3" onclick="openModal('modal3')" title="Клумба 1 (Тіньова)"><span>3</span></div>
+        <div class="pin" id="pin4" onclick="openModal('modal4')" title="Клумба 2 (Сонячна)"><span>4</span></div>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Modal 1 -->
+    <div id="modal1" class="modal" onclick="closeOnBackdrop(event, 'modal1')">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('modal1')">&times;</button>
+            <div class="modal-body">
+                <img src="route_perspective_1_1782913371194.png" class="modal-image" alt="Перспективний вид 1">
+                <div class="modal-text">
+                    <h2>Перспектива маршруту (Спокій)</h2>
+                    <p>Ця ділянка маршруту фокусується на створенні захищеного мікроклімату. Доріжки мають звивисту форму, що природним чином уповільнює рух, заохочуючи до неспішної прогулянки та перемикаючи увагу з повсякденних турбот.</p>
+                    <h3>Основні елементи:</h3>
+                    <ul class="plant-list">
+                        <li><strong>Туя західна:</strong> Слугує кулісою, відгороджує від шуму, виділяє фітонциди.</li>
+                        <li><strong>Гортензія:</strong> Додає об'єму та спокійних візуальних акцентів.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2 -->
+    <div id="modal2" class="modal" onclick="closeOnBackdrop(event, 'modal2')">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('modal2')">&times;</button>
+            <div class="modal-body">
+                <img src="route_perspective_2_1782913428297.png" class="modal-image" alt="Перспективний вид 2">
+                <div class="modal-text">
+                    <h2>Перспектива маршруту (Стимуляція)</h2>
+                    <p>Продовження маршруту, де акцент зміщується на ароматерапію та більш виражені текстури. Це місце створено для підняття настрою та активації нюху.</p>
+                    <h3>Основні елементи:</h3>
+                    <ul class="plant-list">
+                        <li><strong>Троянди та Лаванда:</strong> Поєднання квіткового аромату та ефірних олій для вироблення ендорфінів.</li>
+                        <li><strong>Вівсяниця сиза:</strong> Сизуватий колір для контрасту з квітами.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3 -->
+    <div id="modal3" class="modal" onclick="closeOnBackdrop(event, 'modal3')">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('modal3')">&times;</button>
+            <div class="modal-body">
+                <img src="flowerbed_1_1782913473082.png" class="modal-image" alt="Тіньова клумба">
+                <div class="modal-text">
+                    <h2>Тіньова текстурна клумба</h2>
+                    <h3>Сенсорний спокій</h3>
+                    <p>Зона для глибокої релаксації. Спокійні зелені відтінки, гра світла й тіні та різноманітність фактур листя знижують зорове навантаження.</p>
+                    <ul class="plant-list">
+                        <li><strong>Хоста (Hosta):</strong> Домінанта, велике гладке листя (м'якість).</li>
+                        <li><strong>Бересклет Форчуна:</strong> Строкатий дрібнотекстурний килим.</li>
+                        <li><strong>Рододендрон:</strong> Структурний акцент, вічнозелене листя.</li>
+                        <li><strong>Ялівець козацький:</strong> Фітонциди, бактерицидний аромат.</li>
+                    </ul>
+                    <p><em>Ефект: Зниження стресу, концентрація на деталях.</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4 -->
+    <div id="modal4" class="modal" onclick="closeOnBackdrop(event, 'modal4')">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('modal4')">&times;</button>
+            <div class="modal-body">
+                <img src="flowerbed_2_1782913519597.png" class="modal-image" alt="Сонячна клумба">
+                <div class="modal-text">
+                    <h2>Сонячна ароматична клумба</h2>
+                    <h3>Сенсорна стимуляція</h3>
+                    <p>Динамічна, яскрава зона для підняття настрою. Використання злаків додає елемент руху (кінетики) та звуку (шерех).</p>
+                    <ul class="plant-list">
+                        <li><strong>Гортензія та Троянди:</strong> Колір, об'єм та класична ароматерапія.</li>
+                        <li><strong>Лаванда та Флокс:</strong> Заспокійливі ефірні олії та солодкий літній аромат.</li>
+                        <li><strong>Міскантус китайський:</strong> Високий злак для аудіальної стимуляції (шерех вітру).</li>
+                    </ul>
+                    <p><em>Ефект: Емоційне піднесення, активна стимуляція відчуттів.</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.style.display = 'flex';
+            // Force a reflow to make the transition work
+            modal.offsetHeight; 
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }, 400); // Matches the CSS transition time
+        }
+
+        function closeOnBackdrop(event, modalId) {
+            if (event.target.id === modalId) {
+                closeModal(modalId);
+            }
+        }
+    </script>
+</body>
+</html>
